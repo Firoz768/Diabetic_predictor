@@ -19,11 +19,11 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.pregnancies.label(class="form-label") }}
-                                {{ form.pregnancies(class="form-control", placeholder="0-20") }}
+                                {{ form.pregnancies(class="form-control", placeholder="0-20", min="0", max="20") }}
                                 {% for error in form.pregnancies.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
-                                <div class="form-text text-light">Number of times pregnant</div>
+                                <div class="form-text text-light">Number of times pregnant (0 for none)</div>
                             </div>
                         </div>
                         
@@ -129,7 +129,7 @@
                     <h2 class="mb-4">Patient is predicted to be:</h2>
                     
                     <div class="display-4 fw-bold mb-3
-                        {% if result.prediction == 'Diabetic' %}text-danger{% else %}text-success{% endif %}">
+                        {% if result.prediction == 'Diabetic' %}text-danger prediction-diabetic{% else %}text-success prediction-non-diabetic{% endif %}">
                         {{ result.prediction }}
                     </div>
                     
@@ -146,10 +146,112 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mt-4">
+                    <div class="mt-4 no-print">
                         <button class="btn btn-secondary" onclick="window.print()">
                             <i class="fas fa-print me-2"></i> Print Result
                         </button>
+                    </div>
+                    
+                    <!-- Print-only section with additional details -->
+                    <div class="print-only">
+                        <div class="print-header">
+                            <h1>Diabetes Prediction Report</h1>
+                            <p>Generated on: {{ now().strftime('%B %d, %Y at %H:%M') }}</p>
+                        </div>
+                        
+                        <div class="print-result">
+                            <h2>Patient Information</h2>
+                            <table class="input-data-table">
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>Value</th>
+                                    <th>Normal Range</th>
+                                </tr>
+                                <tr>
+                                    <td>Pregnancies</td>
+                                    <td>{{ request.form.get('pregnancies') }}</td>
+                                    <td>N/A</td>
+                                </tr>
+                                <tr>
+                                    <td>Glucose (mg/dL)</td>
+                                    <td>{{ request.form.get('glucose') }}</td>
+                                    <td>70-99 fasting, <140 after meals</td>
+                                </tr>
+                                <tr>
+                                    <td>Blood Pressure (mm Hg)</td>
+                                    <td>{{ request.form.get('blood_pressure') }}</td>
+                                    <td><120/80 (optimal)</td>
+                                </tr>
+                                <tr>
+                                    <td>Skin Thickness (mm)</td>
+                                    <td>{{ request.form.get('skin_thickness') }}</td>
+                                    <td>Males: 12.5mm, Females: 16.5mm (triceps)</td>
+                                </tr>
+                                <tr>
+                                    <td>Insulin (mu U/ml)</td>
+                                    <td>{{ request.form.get('insulin') }}</td>
+                                    <td>2-25 fasting</td>
+                                </tr>
+                                <tr>
+                                    <td>BMI</td>
+                                    <td>{{ request.form.get('bmi') }}</td>
+                                    <td>18.5-24.9 (healthy range)</td>
+                                </tr>
+                                <tr>
+                                    <td>Diabetes Pedigree Function</td>
+                                    <td>{{ request.form.get('diabetes_pedigree_function') }}</td>
+                                    <td>N/A (higher = stronger family history)</td>
+                                </tr>
+                                <tr>
+                                    <td>Age (years)</td>
+                                    <td>{{ request.form.get('age') }}</td>
+                                    <td>N/A</td>
+                                </tr>
+                            </table>
+                            
+                            <h2>Prediction Result</h2>
+                            <p class="{% if result.prediction == 'Diabetic' %}prediction-diabetic{% else %}prediction-non-diabetic{% endif %}">
+                                {{ result.prediction }} (Confidence: {{ result.probability }})
+                            </p>
+                            
+                            <div class="alert 
+                                {% if result.prediction == 'Diabetic' %}alert-danger{% else %}alert-success{% endif %}">
+                                {% if result.prediction == 'Diabetic' %}
+                                    <i class="fas fa-exclamation-triangle me-2"></i> This patient shows signs of diabetes and should be evaluated by a healthcare professional.
+                                {% else %}
+                                    <i class="fas fa-check-circle me-2"></i> This patient does not show significant signs of diabetes.
+                                {% endif %}
+                            </div>
+                            
+                            <div class="health-tips">
+                                <h3>Health Tips & Recommendations</h3>
+                                {% if result.prediction == 'Diabetic' %}
+                                <ul>
+                                    <li><strong>Medical Follow-up:</strong> Schedule an appointment with a healthcare provider for a comprehensive diabetes evaluation.</li>
+                                    <li><strong>Blood Glucose Monitoring:</strong> Consider getting a blood glucose meter to track your levels regularly.</li>
+                                    <li><strong>Diet Modifications:</strong> Reduce intake of refined sugars and carbohydrates; increase fiber-rich foods.</li>
+                                    <li><strong>Physical Activity:</strong> Aim for at least 150 minutes of moderate activity per week.</li>
+                                    <li><strong>Weight Management:</strong> Work towards achieving and maintaining a healthy weight.</li>
+                                </ul>
+                                {% else %}
+                                <ul>
+                                    <li><strong>Preventive Screening:</strong> Continue regular diabetes screening as recommended by your healthcare provider.</li>
+                                    <li><strong>Balanced Diet:</strong> Maintain a diet rich in vegetables, fruits, whole grains, and lean proteins.</li>
+                                    <li><strong>Regular Exercise:</strong> Stay active with at least 150 minutes of moderate activity per week.</li>
+                                    <li><strong>Healthy Weight:</strong> Maintain a BMI in the normal range (18.5-24.9).</li>
+                                    <li><strong>Limited Sugar Intake:</strong> Reduce consumption of added sugars and processed foods.</li>
+                                </ul>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="print-disclaimer">
+                                <p><strong>Disclaimer:</strong> This prediction is based on machine learning and should not be considered a medical diagnosis. Always consult with a healthcare professional for proper medical advice and treatment.</p>
+                            </div>
+                            
+                            <div class="print-footer">
+                                Diabetes Predictor - Copyright © {{ now().year }} - A machine learning application for diabetes risk assessment
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

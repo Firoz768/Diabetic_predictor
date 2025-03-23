@@ -1,0 +1,155 @@
+/* Print-specific styles for Diabetes Predictor */
+
+@media print {
+    /* Hide non-essential elements when printing */
+    nav, footer, form, .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background-color: white !important;
+        color: #333 !important;
+        font-family: Arial, sans-serif !important;
+        margin: 0 !important;
+        padding: 20px !important;
+    }
+    
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Reset any dark theme colors for printing */
+    .bg-dark, .card-header, .card, .card-body {
+        background-color: white !important;
+        color: #333 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Format header for printing */
+    .print-header {
+        text-align: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 15px;
+    }
+    
+    /* Format the prediction result for printing */
+    .print-result {
+        display: block !important;
+        page-break-inside: avoid;
+        margin: 0 auto;
+        width: 100%;
+        max-width: 800px;
+    }
+    
+    .print-result h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+        color: #333 !important;
+    }
+    
+    .print-result h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+        color: #333 !important;
+    }
+    
+    /* Prediction styling */
+    .prediction-diabetic {
+        color: #dc3545 !important;
+        font-weight: bold;
+    }
+    
+    .prediction-non-diabetic {
+        color: #28a745 !important;
+        font-weight: bold;
+    }
+    
+    /* Health tips section */
+    .health-tips {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa !important;
+        border-radius: 5px;
+        page-break-inside: avoid;
+    }
+    
+    .health-tips h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #333 !important;
+    }
+    
+    .health-tips ul {
+        padding-left: 20px;
+    }
+    
+    .health-tips li {
+        margin-bottom: 5px;
+    }
+    
+    /* Input data table */
+    .input-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    
+    .input-data-table th, .input-data-table td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .input-data-table th {
+        background-color: #f2f2f2 !important;
+        color: #333 !important;
+    }
+    
+    /* Footer for printed page */
+    .print-footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #666 !important;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+    }
+    
+    .print-disclaimer {
+        margin-top: 20px;
+        font-style: italic;
+        color: #666 !important;
+    }
+    
+    /* Show print-only elements */
+    .print-only {
+        display: block !important;
+    }
+    
+    /* Alert styling for print */
+    .alert-danger {
+        color: #721c24 !important;
+        background-color: #f8d7da !important;
+        border: 1px solid #f5c6cb !important;
+        padding: 10px !important;
+        border-radius: 5px !important;
+    }
+    
+    .alert-success {
+        color: #155724 !important;
+        background-color: #d4edda !important;
+        border: 1px solid #c3e6cb !important;
+        padding: 10px !important;
+        border-radius: 5px !important;
+    }
+}
+
+/* Hide print-only elements on screen */
+.print-only {
+    display: none;
+}

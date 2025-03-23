@@ -16,5 +16,23 @@
         "prediction": 1,
         "prediction_probability": 0.55,
         "created_at": "2025-03-23T04:02:51.585008"
+    },
+    {
+        "_id": "59e1e14b-c1d9-4393-ac45-2c019f60c606",
+        "user_id": "5bb64bf2-e5ae-4a24-93ce-639e1ebfb306",
+        "model_id": "092749e9-eb82-4111-8120-8090a1f399db",
+        "input_data": {
+            "Pregnancies": 1,
+            "Glucose": 25.0,
+            "BloodPressure": 80.0,
+            "SkinThickness": 10.0,
+            "Insulin": 10.0,
+            "BMI": 21.0,
+            "DiabetesPedigreeFunction": 1.0,
+            "Age": 21
+        },
+        "prediction": 1,
+        "prediction_probability": 0.55,
+        "created_at": "2025-03-23T04:08:12.869267"
     }
 ]

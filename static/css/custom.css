@@ -1,0 +1,93 @@
+/* Main Styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Make footer stick to bottom */
+footer {
+    margin-top: auto;
+}
+
+/* Card hover effect */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Custom badge colors */
+.badge.bg-success {
+    background-color: var(--bs-success) !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--bs-danger) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--bs-warning) !important;
+    color: var(--bs-dark);
+}
+
+/* Form styling */
+.form-control:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Add spacing to buttons when they're next to each other */
+.btn + .btn {
+    margin-left: 0.5rem;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+/* Print styles */
+@media print {
+    .navbar, .footer, .btn, form {
+        display: none;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .row {
+        display: block;
+    }
+    
+    .col-md-5, .col-md-7 {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+    
+    h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    
+    body {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+}

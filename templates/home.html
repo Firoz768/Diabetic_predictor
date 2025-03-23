@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Diabetes Predictor{% endblock %}
+
+{% block content %}
+<div class="row align-items-center">
+    <div class="col-lg-6">
+        <div class="mb-5">
+            <h1 class="display-4 fw-bold mb-3">Predict Diabetes with Machine Learning</h1>
+            <p class="lead">Upload your dataset, train a machine learning model, and make accurate predictions for diabetes diagnosis.</p>
+            
+            {% if is_user_logged_in() %}
+                <div class="d-grid gap-2 d-md-flex mt-4">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg me-md-2">
+                        <i class="fas fa-tachometer-alt me-2"></i> Go to Dashboard
+                    </a>
+                    <a href="{{ url_for('model_analysis') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-chart-line me-2"></i> Train a Model
+                    </a>
+                </div>
+            {% else %}
+                <div class="d-grid gap-2 d-md-flex mt-4">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg me-md-2">
+                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                    </a>
+                    <a href="{{ url_for('signup') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-user-plus me-2"></i> Sign Up
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card bg-dark text-light">
+            <div class="card-body p-4">
+                <h3 class="card-title"><i class="fas fa-check-circle text-success me-2"></i>Key Features</h3>
+                <ul class="list-group list-group-flush mt-3">
+                    <li class="list-group-item bg-dark text-light border-secondary">
+                        <i class="fas fa-upload me-2 text-primary"></i> Upload your dataset in CSV format
+                    </li>
+                    <li class="list-group-item bg-dark text-light border-secondary">
+                        <i class="fas fa-brain me-2 text-primary"></i> Train a machine learning model
+                    </li>
+                    <li class="list-group-item bg-dark text-light border-secondary">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i> Visualize model performance metrics
+                    </li>
+                    <li class="list-group-item bg-dark text-light border-secondary">
+                        <i class="fas fa-diagnoses me-2 text-primary"></i> Make predictions with patient data
+                    </li>
+                    <li class="list-group-item bg-dark text-light border-secondary">
+                        <i class="fas fa-history me-2 text-primary"></i> Track your prediction history
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">How It Works</h2>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 bg-dark border-secondary">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-upload fa-3x text-primary"></i>
+                </div>
+                <h4 class="card-title">1. Upload Dataset</h4>
+                <p class="card-text">Upload your diabetes dataset in CSV format. The system expects specific columns including patient features and outcomes.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 bg-dark border-secondary">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-cogs fa-3x text-primary"></i>
+                </div>
+                <h4 class="card-title">2. Train Model</h4>
+                <p class="card-text">The system trains a RandomForest classifier on your data and shows you important metrics like accuracy and feature importance.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100 bg-dark border-secondary">
+            <div class="card-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-diagnoses fa-3x text-primary"></i>
+                </div>
+                <h4 class="card-title">3. Make Predictions</h4>
+                <p class="card-text">Enter patient data through a simple form and get instant predictions about diabetes risk with confidence levels.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12 text-center">
+        <h2 class="mb-4">Ready to Get Started?</h2>
+        {% if is_user_logged_in() %}
+            <a href="{{ url_for('model_analysis') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-chart-line me-2"></i> Train Your First Model
+            </a>
+        {% else %}
+            <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i> Create an Account
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

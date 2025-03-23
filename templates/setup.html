@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Setup - Diabetes Predictor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-dark border-secondary">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">
+                    <i class="fas fa-database me-2"></i> MongoDB Setup Required
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> The application requires a MongoDB connection string to function properly.
+                </div>
+                
+                <p class="lead">Please provide your MongoDB connection string to initialize the database:</p>
+                
+                <form method="POST" action="{{ url_for('setup') }}">
+                    <div class="mb-3">
+                        <label for="mongo_uri" class="form-label">MongoDB Connection String:</label>
+                        <input type="text" class="form-control" id="mongo_uri" name="mongo_uri" 
+                               placeholder="mongodb+srv://username:password@cluster.mongodb.net/diabetes_predictor" required>
+                        <div class="form-text">
+                            This connection string will be used to connect to your MongoDB database.
+                            Your connection string is securely stored as an environment variable.
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check-circle me-2"></i> Initialize Database
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <h5>Don't have a MongoDB connection string?</h5>
+                    <p>You can get a free MongoDB database from:</p>
+                    <ul>
+                        <li><a href="https://www.mongodb.com/cloud/atlas" target="_blank" rel="noopener">MongoDB Atlas</a> - Cloud-hosted MongoDB service with a free tier</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

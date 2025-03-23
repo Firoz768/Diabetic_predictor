@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Prediction - Diabetes Predictor{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-diagnoses me-2"></i>Diabetes Prediction</h1>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Enter Patient Data</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('prediction') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.pregnancies.label(class="form-label") }}
+                                {{ form.pregnancies(class="form-control", placeholder="0-20") }}
+                                {% for error in form.pregnancies.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Number of times pregnant</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.glucose.label(class="form-label") }}
+                                {{ form.glucose(class="form-control", placeholder="0-200") }}
+                                {% for error in form.glucose.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Plasma glucose concentration</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.blood_pressure.label(class="form-label") }}
+                                {{ form.blood_pressure(class="form-control", placeholder="0-140") }}
+                                {% for error in form.blood_pressure.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Diastolic blood pressure</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.skin_thickness.label(class="form-label") }}
+                                {{ form.skin_thickness(class="form-control", placeholder="0-100") }}
+                                {% for error in form.skin_thickness.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Triceps skin fold thickness</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.insulin.label(class="form-label") }}
+                                {{ form.insulin(class="form-control", placeholder="0-850") }}
+                                {% for error in form.insulin.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">2-Hour serum insulin</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.bmi.label(class="form-label") }}
+                                {{ form.bmi(class="form-control", placeholder="0-70") }}
+                                {% for error in form.bmi.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Body mass index</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.diabetes_pedigree_function.label(class="form-label") }}
+                                {{ form.diabetes_pedigree_function(class="form-control", placeholder="0.0-3.0") }}
+                                {% for error in form.diabetes_pedigree_function.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Diabetes pedigree function</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.age.label(class="form-label") }}
+                                {{ form.age(class="form-control", placeholder="0-120") }}
+                                {% for error in form.age.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text text-light">Age in years</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        {% if result %}
+            <div class="card mb-4 bg-dark border-secondary">
+                <div class="card-header bg-dark">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Prediction Result</h5>
+                </div>
+                <div class="card-body text-center p-4">
+                    <h2 class="mb-4">Patient is predicted to be:</h2>
+                    
+                    <div class="display-4 fw-bold mb-3
+                        {% if result.prediction == 'Diabetic' %}text-danger{% else %}text-success{% endif %}">
+                        {{ result.prediction }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="lead">Confidence: {{ result.probability }}</p>
+                    </div>
+                    
+                    <div class="alert 
+                        {% if result.prediction == 'Diabetic' %}alert-danger{% else %}alert-success{% endif %}">
+                        {% if result.prediction == 'Diabetic' %}
+                            <i class="fas fa-exclamation-triangle me-2"></i> This patient shows signs of diabetes and should be evaluated by a healthcare professional.
+                        {% else %}
+                            <i class="fas fa-check-circle me-2"></i> This patient does not show significant signs of diabetes.
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button class="btn btn-secondary" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i> Print Result
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card mb-4 bg-dark border-secondary">
+                <div class="card-header bg-dark">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Information</h5>
+                </div>
+                <div class="card-body">
+                    <h5>About the Diabetes Prediction</h5>
+                    <p>Enter the patient data in the form to get a prediction on diabetes likelihood.</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i> <strong>Note:</strong> The model uses a Random Forest classifier trained on patient data to predict diabetes.
+                    </div>
+                    
+                    <h5 class="mt-4">About the Input Features:</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Pregnancies:</strong> Number of times pregnant
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Glucose:</strong> Plasma glucose concentration (mg/dL)
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Blood Pressure:</strong> Diastolic blood pressure (mm Hg)
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Skin Thickness:</strong> Triceps skin fold thickness (mm)
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Insulin:</strong> 2-Hour serum insulin (mu U/ml)
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>BMI:</strong> Body mass index (weight in kg/(height in m)²)
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Diabetes Pedigree Function:</strong> Likelihood of diabetes based on family history
+                        </li>
+                        <li class="list-group-item bg-dark text-light border-secondary">
+                            <strong>Age:</strong> Age in years
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

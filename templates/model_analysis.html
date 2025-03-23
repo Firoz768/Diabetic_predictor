@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Model Analysis - Diabetes Predictor{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="fas fa-chart-line me-2"></i>Model Analysis</h1>
+
+<div class="card mb-4 bg-dark border-secondary">
+    <div class="card-header bg-dark">
+        <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Dataset</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('model_analysis') }}" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="file" class="form-label">Select CSV file with diabetes dataset</label>
+                <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                <div class="form-text text-light">
+                    The dataset should contain the following columns: Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age, Outcome.
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-cogs me-2"></i> Train Model
+            </button>
+        </form>
+    </div>
+</div>
+
+{% if accuracy is defined %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-percentage me-2"></i>Model Accuracy</h5>
+            </div>
+            <div class="card-body text-center p-4">
+                <div class="display-1 fw-bold mb-3 
+                    {% if accuracy > 0.8 %}text-success
+                    {% elif accuracy > 0.6 %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ "%.2f"|format(accuracy * 100) }}%
+                </div>
+                <p class="mb-0">
+                    {% if accuracy > 0.8 %}
+                        <span class="badge bg-success">Excellent</span>
+                    {% elif accuracy > 0.6 %}
+                        <span class="badge bg-warning">Good</span>
+                    {% else %}
+                        <span class="badge bg-danger">Poor</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Feature Importance</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="data:image/png;base64,{{ fi_image }}" class="img-fluid" alt="Feature Importance">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-th me-2"></i>Confusion Matrix</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="data:image/png;base64,{{ cm_image }}" class="img-fluid" alt="Confusion Matrix">
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card mb-4 bg-dark border-secondary">
+            <div class="card-header bg-dark">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Model Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <tbody>
+                            <tr>
+                                <th scope="row">Algorithm</th>
+                                <td>Random Forest Classifier</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Parameters</th>
+                                <td>n_estimators=100, random_state=42</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Train-Test Split</th>
+                                <td>80% Training, 20% Testing</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Trained On</th>
+                                <td>{{ now.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('prediction') }}" class="btn btn-success">
+                        <i class="fas fa-diagnoses me-2"></i> Make Predictions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if feature_importance is defined %}
+<div class="card mb-4 bg-dark border-secondary">
+    <div class="card-header bg-dark">
+        <h5 class="mb-0"><i class="fas fa-table me-2"></i>Feature Importance Details</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Importance</th>
+                        <th>Relative Importance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feature in feature_importance %}
+                        <tr>
+                            <td>{{ feature.Feature }}</td>
+                            <td>{{ "%.4f"|format(feature.Importance) }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         style="width: {{ (feature.Importance / feature_importance[0].Importance * 100)|round }}%;" 
+                                         aria-valuenow="{{ (feature.Importance / feature_importance[0].Importance * 100)|round }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ (feature.Importance / feature_importance[0].Importance * 100)|round }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

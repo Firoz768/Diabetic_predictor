@@ -18,9 +18,9 @@ import base64
 from datetime import datetime
 import joblib
 import json
-from forms import LoginForm, SignupForm, PredictionForm
-import models
 import temp_auth
+import models
+from forms import LoginForm, SignupForm, PredictionForm
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -261,7 +261,7 @@ def model_analysis():
                     list(X.columns),
                     algorithm
                 )
-                model_id = result.inserted_id
+                model_id = result['inserted_id']
                 
                 # Store model in session for prediction
                 session['model'] = {
@@ -402,7 +402,7 @@ def export_predictions(format):
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    user_predictions = models.get_predictions_by_user(session['user_id'])
+    user_predictions = temp_auth.get_predictions_by_user(session['user_id'])
     
     if not user_predictions:
         flash('No predictions to export.', 'warning')
@@ -429,7 +429,7 @@ def export_predictions(format):
             'age': pred['input_data']['Age'],
             'prediction': 'Diabetic' if pred['prediction'] == 1 else 'Non-Diabetic',
             'probability': f"{pred['prediction_probability'] * 100:.2f}%",
-            'date': pred['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            'date': pred['created_at'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(pred['created_at'], 'strftime') else pred['created_at']
         }
         export_data.append(export_item)
     

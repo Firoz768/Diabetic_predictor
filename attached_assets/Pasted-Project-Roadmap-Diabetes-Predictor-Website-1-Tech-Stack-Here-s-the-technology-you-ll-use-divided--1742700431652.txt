@@ -1,0 +1,150 @@
+Project Roadmap: Diabetes Predictor Website
+1. Tech Stack
+Here’s the technology you’ll use, divided by frontend, backend, and database:
+
+Frontend:
+
+HTML5, CSS3, JavaScript: For creating the user interface (e.g., forms, dashboards).
+
+Bootstrap: For responsive design and UI components.
+
+Chart.js or Plotly.js: For interactive visualizations (e.g., model accuracy, confusion matrix).
+
+Backend:
+
+Flask: For handling routes, form submissions, and backend logic.
+
+Python Libraries:
+
+pandas: For data preprocessing (handling uploaded CSV files).
+
+scikit-learn: For machine learning model training and predictions.
+
+matplotlib and seaborn: For generating visualizations.
+
+Database:
+
+MongoDB: To store user credentials and patient prediction data.
+
+Flask-Session: For managing user sessions.
+
+2. Core Features
+These are the primary functionalities your website will have:
+
+Authentication System:
+
+Signup: Allow users to register with username and password.
+
+Login: Enable secure login with bcrypt hashed passwords.
+
+Logout: Provide a logout option to end user sessions.
+
+Upload Dataset:
+
+Allow users to upload a CSV file containing patient data (e.g., features and labels).
+
+Perform basic validations (e.g., ensure file format is correct).
+
+Train Machine Learning Model:
+
+Use the uploaded dataset to train a machine learning model (e.g., RandomForestClassifier).
+
+Calculate performance metrics like accuracy and confusion matrix.
+
+Visualizations and Analysis:
+
+Generate charts like:
+
+Model accuracy score.
+
+Confusion matrix visualization.
+
+Display results interactively using charting libraries (e.g., Chart.js or embedded matplotlib images).
+
+Prediction Page:
+
+Provide a form where users can input patient data manually to make predictions based on the trained model.
+
+Dashboard:
+
+Show an overview of all user activities (e.g., uploaded datasets, predictions made, model performance metrics).
+
+3. User Flow
+Here’s how the website should work for users:
+
+Landing Page:
+
+A welcoming home page with links to Login or Signup.
+
+Authentication:
+
+Users log in or register via the Auth page.
+
+After login, redirect users to the Dashboard.
+
+Model Analysis:
+
+Users visit the Model Analysis page to upload a dataset and train the model:
+
+File Upload Form.
+
+"Train Model" Button.
+
+Display training results, including:
+
+Accuracy score.
+
+Confusion matrix (as a table and chart).
+
+Predictions:
+
+Users navigate to the Prediction Page:
+
+Enter patient data into a form.
+
+Submit to get predictions in real-time.
+
+Logout:
+
+Users click "Logout" to end their session.
+
+4. High-Level Development Phases
+Follow these phases to build your website:
+
+Phase 1: Initial Setup
+
+Set up the Flask application structure (app.py, templates/, static/).
+
+Configure MongoDB and Flask-Session for authentication.
+
+Phase 2: Authentication
+
+Build and test user signup/login/logout functionality.
+
+Store credentials securely in MongoDB.
+
+Phase 3: Model Training
+
+Create a Model Analysis page.
+
+Implement dataset upload and training logic.
+
+Display model metrics after training.
+
+Phase 4: Predictions
+
+Build a Prediction Page.
+
+Implement form-based predictions using the trained model.
+
+Phase 5: Visualizations
+
+Add interactive visualizations for model accuracy, confusion matrix, etc.
+
+Phase 6: Final Touches
+
+Add styling and responsiveness using Bootstrap.
+
+Test edge cases (e.g., invalid file uploads, user input errors).
+
+Deploy the website (e.g., on Heroku or AWS).

@@ -65,14 +65,14 @@ def signup():
     form = SignupForm()
     if form.validate_on_submit():
         # Check if username already exists
-        existing_user = temp_auth.get_user_by_username(form.username.data)
+        existing_user = auth.get_user_by_username(form.username.data)
         if existing_user:
             flash('Username already exists. Please choose a different one.', 'danger')
             return render_template('signup.html', form=form)
         
         # Create the user
         hashed_password = generate_password_hash(form.password.data)
-        result = temp_auth.create_user(form.username.data, hashed_password)
+        result = auth.create_user(form.username.data, hashed_password)
         
         flash('Account created successfully! Please log in.', 'success')
         return redirect(url_for('login'))
@@ -83,7 +83,7 @@ def signup():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = temp_auth.get_user_by_username(form.username.data)
+        user = auth.get_user_by_username(form.username.data)
         
         if user and check_password_hash(user['password'], form.password.data):
             session['user_id'] = str(user['_id'])
@@ -110,10 +110,10 @@ def dashboard():
         return redirect(url_for('login'))
     
     # Get user models
-    user_models = temp_auth.get_models_by_user(session['user_id'])
+    user_models = auth.get_models_by_user(session['user_id'])
     
     # Get user predictions
-    user_predictions = temp_auth.get_predictions_by_user(session['user_id'])
+    user_predictions = auth.get_predictions_by_user(session['user_id'])
     
     return render_template('dashboard.html', models=user_models, predictions=user_predictions)
 
@@ -260,7 +260,7 @@ def model_analysis():
                 joblib.dump(model, model_filename)
                 
                 # Store model info in database
-                result = temp_auth.save_model_data(
+                result = auth.save_model_data(
                     session['user_id'],
                     filename,
                     model_filename,
@@ -312,7 +312,7 @@ def prediction():
     # Get the latest model if none is in session
     if 'model' not in session:
         # Get the user's models and take the first one (most recent)
-        user_models = temp_auth.get_models_by_user(session['user_id'])
+        user_models = auth.get_models_by_user(session['user_id'])
         latest_model = user_models[0] if user_models else None
         
         if latest_model:
@@ -350,7 +350,7 @@ def prediction():
             prediction_proba = model.predict_proba(input_df)[0][1]  # Probability of being diabetic
             
             # Save prediction to database
-            temp_auth.save_prediction(
+            auth.save_prediction(
                 session['user_id'],
                 session['model']['id'],
                 input_data,
@@ -376,7 +376,7 @@ def api_models():
     if 'user_id' not in session:
         return json.dumps({'error': 'Unauthorized'}), 401
     
-    user_models = temp_auth.get_models_by_user(session['user_id'])
+    user_models = auth.get_models_by_user(session['user_id'])
     for model in user_models:
         model['_id'] = str(model['_id'])
         if isinstance(model['created_at'], str):

@@ -462,5 +462,179 @@
         ],
         "algorithm": "knn",
         "created_at": "2025-03-23T03:54:45.414825"
+    },
+    {
+        "_id": "5bb8a0fc-1928-415e-963d-6e6f6bdcf0aa",
+        "user_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "filename": "diabetes.csv",
+        "model_filename": "model_34f7e11f-ee11-4989-b453-53324f496fe5_20250323035735.joblib",
+        "accuracy": 0.7272727272727273,
+        "confusion_matrix": [
+            [
+                78,
+                21
+            ],
+            [
+                21,
+                34
+            ]
+        ],
+        "feature_names": [
+            "Pregnancies",
+            "Glucose",
+            "BloodPressure",
+            "SkinThickness",
+            "Insulin",
+            "BMI",
+            "DiabetesPedigreeFunction",
+            "Age"
+        ],
+        "algorithm": "random_forest",
+        "created_at": "2025-03-23T03:57:35.621520"
+    },
+    {
+        "_id": "46d0c3da-9066-44cf-8747-fbc3f8f2a476",
+        "user_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "filename": "diabetes.csv",
+        "model_filename": "model_34f7e11f-ee11-4989-b453-53324f496fe5_20250323035742.joblib",
+        "accuracy": 0.7272727272727273,
+        "confusion_matrix": [
+            [
+                78,
+                21
+            ],
+            [
+                21,
+                34
+            ]
+        ],
+        "feature_names": [
+            "Pregnancies",
+            "Glucose",
+            "BloodPressure",
+            "SkinThickness",
+            "Insulin",
+            "BMI",
+            "DiabetesPedigreeFunction",
+            "Age"
+        ],
+        "algorithm": "random_forest",
+        "created_at": "2025-03-23T03:57:42.262394"
+    },
+    {
+        "_id": "49f54e7a-51de-4384-b746-fde7670832c1",
+        "user_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "filename": "diabetes.csv",
+        "model_filename": "model_34f7e11f-ee11-4989-b453-53324f496fe5_20250323035742.joblib",
+        "accuracy": 0.7272727272727273,
+        "confusion_matrix": [
+            [
+                78,
+                21
+            ],
+            [
+                21,
+                34
+            ]
+        ],
+        "feature_names": [
+            "Pregnancies",
+            "Glucose",
+            "BloodPressure",
+            "SkinThickness",
+            "Insulin",
+            "BMI",
+            "DiabetesPedigreeFunction",
+            "Age"
+        ],
+        "algorithm": "random_forest",
+        "created_at": "2025-03-23T03:57:42.827992"
+    },
+    {
+        "_id": "06017cae-4ec4-4a05-a2de-07a8d89d5b00",
+        "user_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "filename": "diabetes.csv",
+        "model_filename": "model_34f7e11f-ee11-4989-b453-53324f496fe5_20250323035743.joblib",
+        "accuracy": 0.7272727272727273,
+        "confusion_matrix": [
+            [
+                78,
+                21
+            ],
+            [
+                21,
+                34
+            ]
+        ],
+        "feature_names": [
+            "Pregnancies",
+            "Glucose",
+            "BloodPressure",
+            "SkinThickness",
+            "Insulin",
+            "BMI",
+            "DiabetesPedigreeFunction",
+            "Age"
+        ],
+        "algorithm": "random_forest",
+        "created_at": "2025-03-23T03:57:43.389826"
+    },
+    {
+        "_id": "b28bf323-7a0a-4ebc-8a6b-b949656f75c6",
+        "user_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "filename": "diabetes.csv",
+        "model_filename": "model_34f7e11f-ee11-4989-b453-53324f496fe5_20250323035743.joblib",
+        "accuracy": 0.7272727272727273,
+        "confusion_matrix": [
+            [
+                78,
+                21
+            ],
+            [
+                21,
+                34
+            ]
+        ],
+        "feature_names": [
+            "Pregnancies",
+            "Glucose",
+            "BloodPressure",
+            "SkinThickness",
+            "Insulin",
+            "BMI",
+            "DiabetesPedigreeFunction",
+            "Age"
+        ],
+        "algorithm": "random_forest",
+        "created_at": "2025-03-23T03:57:43.930028"
+    },
+    {
+        "_id": "e207be26-bcab-4bb8-8f47-6f60df0171cb",
+        "user_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "filename": "diabetes.csv",
+        "model_filename": "model_34f7e11f-ee11-4989-b453-53324f496fe5_20250323035744.joblib",
+        "accuracy": 0.7272727272727273,
+        "confusion_matrix": [
+            [
+                78,
+                21
+            ],
+            [
+                21,
+                34
+            ]
+        ],
+        "feature_names": [
+            "Pregnancies",
+            "Glucose",
+            "BloodPressure",
+            "SkinThickness",
+            "Insulin",
+            "BMI",
+            "DiabetesPedigreeFunction",
+            "Age"
+        ],
+        "algorithm": "random_forest",
+        "created_at": "2025-03-23T03:57:44.465127"
     }
 ]

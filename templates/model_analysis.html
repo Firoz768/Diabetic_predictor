@@ -18,6 +18,21 @@
                     The dataset should contain the following columns: Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age, Outcome.
                 </div>
             </div>
+            
+            <div class="mb-3">
+                <label for="algorithm" class="form-label">Select Machine Learning Algorithm</label>
+                <select class="form-select" id="algorithm" name="algorithm">
+                    <option value="random_forest" selected>Random Forest</option>
+                    <option value="logistic_regression">Logistic Regression</option>
+                    <option value="svm">Support Vector Machine (SVM)</option>
+                    <option value="gradient_boosting">Gradient Boosting</option>
+                    <option value="knn">K-Nearest Neighbors (KNN)</option>
+                </select>
+                <div class="form-text text-light">
+                    Different algorithms may perform better on different datasets.
+                </div>
+            </div>
+            
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-cogs me-2"></i> Train Model
             </button>
@@ -87,7 +102,21 @@
                         <tbody>
                             <tr>
                                 <th scope="row">Algorithm</th>
-                                <td>Random Forest Classifier</td>
+                                <td>
+                                    {% if algorithm == 'random_forest' %}
+                                        Random Forest Classifier
+                                    {% elif algorithm == 'logistic_regression' %}
+                                        Logistic Regression
+                                    {% elif algorithm == 'svm' %}
+                                        Support Vector Machine (SVM)
+                                    {% elif algorithm == 'gradient_boosting' %}
+                                        Gradient Boosting
+                                    {% elif algorithm == 'knn' %}
+                                        K-Nearest Neighbors (KNN)
+                                    {% else %}
+                                        Random Forest Classifier
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <th scope="row">Parameters</th>

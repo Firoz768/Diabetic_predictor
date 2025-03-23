@@ -1,6 +1,7 @@
 import os
 import logging
-from flask import Flask, render_template, redirect, url_for, flash, request, session
+import csv
+from flask import Flask, render_template, redirect, url_for, flash, request, session, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import pandas as pd
@@ -48,30 +49,7 @@ def allowed_file(filename):
 
 @app.route('/')
 def home():
-    # Check if MongoDB is configured
-    if not db_initialized:
-        flash('Please configure MongoDB to use the application.', 'warning')
-        return redirect(url_for('setup'))
     return render_template('home.html')
-
-@app.route('/setup', methods=['GET', 'POST'])
-def setup():
-    if request.method == 'POST':
-        mongo_uri = request.form.get('mongo_uri')
-        if mongo_uri:
-            try:
-                # Set the environment variable
-                os.environ['MONGO_URI'] = mongo_uri
-                
-                # Initialize the database
-                models.initialize_db(mongo_uri)
-                
-                flash('MongoDB configured successfully!', 'success')
-                return redirect(url_for('home'))
-            except Exception as e:
-                flash(f'Error connecting to MongoDB: {str(e)}', 'danger')
-    
-    return render_template('setup.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -168,9 +146,40 @@ def model_analysis():
                 X = df.drop('Outcome', axis=1)
                 y = df['Outcome']
                 
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                # Get selected algorithm
+                algorithm = request.form.get('algorithm', 'random_forest')
                 
-                model = RandomForestClassifier(n_estimators=100, random_state=42)
+                # Data preprocessing
+                # Handle missing values
+                X = X.fillna(X.mean())
+                
+                # Feature scaling
+                from sklearn.preprocessing import StandardScaler
+                scaler = StandardScaler()
+                X_scaled = scaler.fit_transform(X)
+                X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns)
+                
+                X_train, X_test, y_train, y_test = train_test_split(X_scaled_df, y, test_size=0.2, random_state=42)
+                
+                # Select algorithm based on user choice
+                if algorithm == 'random_forest':
+                    model = RandomForestClassifier(n_estimators=100, random_state=42)
+                elif algorithm == 'logistic_regression':
+                    from sklearn.linear_model import LogisticRegression
+                    model = LogisticRegression(random_state=42, max_iter=1000)
+                elif algorithm == 'svm':
+                    from sklearn.svm import SVC
+                    model = SVC(probability=True, random_state=42)
+                elif algorithm == 'gradient_boosting':
+                    from sklearn.ensemble import GradientBoostingClassifier
+                    model = GradientBoostingClassifier(random_state=42)
+                elif algorithm == 'knn':
+                    from sklearn.neighbors import KNeighborsClassifier
+                    model = KNeighborsClassifier(n_neighbors=5)
+                else:
+                    # Default to Random Forest
+                    model = RandomForestClassifier(n_estimators=100, random_state=42)
+                
                 model.fit(X_train, y_train)
                 
                 # Make predictions and calculate metrics
@@ -195,24 +204,47 @@ def model_analysis():
                 buf.close()
                 plt.close()
                 
-                # Feature importance plot
-                feature_importance = model.feature_importances_
-                feature_importance_df = pd.DataFrame({
-                    'Feature': X.columns,
-                    'Importance': feature_importance
-                }).sort_values(by='Importance', ascending=False)
+                # Feature importance plot - only for models that support it
+                fi_image = None
+                feature_importance_df = None
                 
-                plt.figure(figsize=(10, 6))
-                sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
-                plt.title('Feature Importance')
-                
-                # Save plot to a bytes buffer
-                buf = io.BytesIO()
-                plt.savefig(buf, format='png', bbox_inches='tight')
-                buf.seek(0)
-                fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
-                buf.close()
-                plt.close()
+                if hasattr(model, 'feature_importances_'):
+                    feature_importance = model.feature_importances_
+                    feature_importance_df = pd.DataFrame({
+                        'Feature': X.columns,
+                        'Importance': feature_importance
+                    }).sort_values(by='Importance', ascending=False)
+                    
+                    plt.figure(figsize=(10, 6))
+                    sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
+                    plt.title('Feature Importance')
+                    
+                    # Save plot to a bytes buffer
+                    buf = io.BytesIO()
+                    plt.savefig(buf, format='png', bbox_inches='tight')
+                    buf.seek(0)
+                    fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
+                    buf.close()
+                    plt.close()
+                elif algorithm == 'logistic_regression':
+                    # For logistic regression, use coefficients as feature importance
+                    coef = model.coef_[0]
+                    feature_importance_df = pd.DataFrame({
+                        'Feature': X.columns,
+                        'Importance': np.abs(coef)
+                    }).sort_values(by='Importance', ascending=False)
+                    
+                    plt.figure(figsize=(10, 6))
+                    sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
+                    plt.title('Feature Importance (Coefficient Magnitude)')
+                    
+                    # Save plot to a bytes buffer
+                    buf = io.BytesIO()
+                    plt.savefig(buf, format='png', bbox_inches='tight')
+                    buf.seek(0)
+                    fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
+                    buf.close()
+                    plt.close()
                 
                 # Save model to file
                 model_filename = f"model_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}.joblib"
@@ -238,11 +270,16 @@ def model_analysis():
                 
                 flash(f'Model trained successfully with accuracy: {accuracy:.2f}', 'success')
                 
-                return render_template('model_analysis.html', 
-                                      accuracy=accuracy, 
-                                      cm_image=cm_image, 
-                                      fi_image=fi_image,
-                                      feature_importance=feature_importance_df.to_dict('records'))
+                # Prepare template context
+                context = {
+                    'accuracy': accuracy,
+                    'cm_image': cm_image,
+                    'fi_image': fi_image,
+                    'algorithm': algorithm,
+                    'feature_importance': feature_importance_df.to_dict('records') if feature_importance_df is not None else None
+                }
+                
+                return render_template('model_analysis.html', **context)
             
             except Exception as e:
                 flash(f'Error processing file: {str(e)}', 'danger')
@@ -348,6 +385,75 @@ def api_predictions():
         pred['created_at'] = pred['created_at'].isoformat()
     
     return json.dumps(user_predictions)
+
+@app.route('/export_predictions/<format>')
+def export_predictions(format):
+    if 'user_id' not in session:
+        flash('Please log in to access this page.', 'warning')
+        return redirect(url_for('login'))
+    
+    user_predictions = models.get_predictions_by_user(session['user_id'])
+    
+    if not user_predictions:
+        flash('No predictions to export.', 'warning')
+        return redirect(url_for('dashboard'))
+    
+    # Create simplified predictions for export
+    export_data = []
+    for pred in user_predictions:
+        # Convert ObjectId to string
+        pred_id = str(pred['_id'])
+        model_id = str(pred['model_id'])
+        
+        # Format the prediction data
+        export_item = {
+            'id': pred_id,
+            'model_id': model_id,
+            'pregnancies': pred['input_data']['Pregnancies'],
+            'glucose': pred['input_data']['Glucose'],
+            'blood_pressure': pred['input_data']['BloodPressure'],
+            'skin_thickness': pred['input_data']['SkinThickness'],
+            'insulin': pred['input_data']['Insulin'],
+            'bmi': pred['input_data']['BMI'],
+            'diabetes_pedigree_function': pred['input_data']['DiabetesPedigreeFunction'],
+            'age': pred['input_data']['Age'],
+            'prediction': 'Diabetic' if pred['prediction'] == 1 else 'Non-Diabetic',
+            'probability': f"{pred['prediction_probability'] * 100:.2f}%",
+            'date': pred['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        }
+        export_data.append(export_item)
+    
+    if format == 'csv':
+        # Convert to CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(export_data[0].keys())
+        
+        # Write data
+        for item in export_data:
+            writer.writerow(item.values())
+        
+        output.seek(0)
+        
+        return Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"}
+        )
+    
+    elif format == 'json':
+        # Return as JSON file
+        return Response(
+            json.dumps(export_data, indent=4),
+            mimetype="application/json",
+            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"}
+        )
+    
+    else:
+        flash('Invalid export format.', 'danger')
+        return redirect(url_for('dashboard'))
 
 @app.context_processor
 def utility_processor():

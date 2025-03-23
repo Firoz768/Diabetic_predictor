@@ -35,7 +35,7 @@ def initialize_db(mongo_uri):
     from bson.objectid import ObjectId
     
     try:
-        client = MongoClient(mongo_uri)
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
         db = client.diabetes_predictor  # Explicitly set database name
         
         # Set up collections
@@ -48,6 +48,19 @@ def initialize_db(mongo_uri):
     except Exception as e:
         logging.error(f"MongoDB connection error: {str(e)}")
         return None
+
+def test_connection():
+    """Test MongoDB connection by performing a simple operation"""
+    try:
+        if not client:
+            return False
+            
+        # Try to execute a simple command with a short timeout
+        client.admin.command('ping')
+        return True
+    except Exception as e:
+        logging.error(f"MongoDB connection test failed: {str(e)}")
+        return False
 
 # User model functions
 def create_user(username, password_hash):

@@ -34,12 +34,17 @@ db_initialized = False
 # Initialize MongoDB if connection string exists
 try:
     db = models.initialize_db(MONGO_URI)
-    db_initialized = True
-    logging.info("MongoDB initialized successfully")
-    
-    # Set authentication module based on database connection
-    auth = models
-    logging.info("Using MongoDB for authentication and data storage")
+    # Test the connection with a simple operation
+    test_result = models.test_connection()
+    if test_result:
+        db_initialized = True
+        logging.info("MongoDB initialized successfully")
+        
+        # Set authentication module based on database connection
+        auth = models
+        logging.info("Using MongoDB for authentication and data storage")
+    else:
+        raise Exception("MongoDB connection test failed")
 except Exception as e:
     logging.error(f"Error initializing MongoDB: {str(e)}")
     logging.info("Using temporary file-based authentication as fallback")
@@ -109,13 +114,18 @@ def dashboard():
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    # Get user models
-    user_models = auth.get_models_by_user(session['user_id'])
-    
-    # Get user predictions
-    user_predictions = auth.get_predictions_by_user(session['user_id'])
-    
-    return render_template('dashboard.html', models=user_models, predictions=user_predictions)
+    try:
+        # Get user models
+        user_models = auth.get_models_by_user(session['user_id'])
+        
+        # Get user predictions
+        user_predictions = auth.get_predictions_by_user(session['user_id'])
+        
+        return render_template('dashboard.html', models=user_models, predictions=user_predictions)
+    except Exception as e:
+        flash(f'Error loading dashboard: {str(e)}', 'danger')
+        logging.error(f"Dashboard error: {str(e)}")
+        return render_template('dashboard.html', models=[], predictions=[])
 
 @app.route('/model_analysis', methods=['GET', 'POST'])
 def model_analysis():
@@ -123,183 +133,212 @@ def model_analysis():
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    if request.method == 'POST':
-        # Check if file is in the request
-        if 'file' not in request.files:
-            flash('No file selected.', 'danger')
-            return redirect(request.url)
-        
-        file = request.files['file']
-        
-        # If user doesn't select a file
-        if file.filename == '':
-            flash('No file selected.', 'danger')
-            return redirect(request.url)
-        
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            
-            try:
-                # Read and process the CSV
-                df = pd.read_csv(file)
-                
-                # Basic validation
-                required_columns = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome']
-                missing_columns = [col for col in required_columns if col not in df.columns]
-                
-                if missing_columns:
-                    flash(f'Missing required columns: {", ".join(missing_columns)}', 'danger')
-                    return redirect(request.url)
-                
-                # Train the model
-                X = df.drop('Outcome', axis=1)
-                y = df['Outcome']
-                
-                # Get selected algorithm
-                algorithm = request.form.get('algorithm', 'random_forest')
-                
-                # Data preprocessing
-                # Handle missing values
-                X = X.fillna(X.mean())
-                
-                # Feature scaling
-                from sklearn.preprocessing import StandardScaler
-                scaler = StandardScaler()
-                X_scaled = scaler.fit_transform(X)
-                X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns)
-                
-                X_train, X_test, y_train, y_test = train_test_split(X_scaled_df, y, test_size=0.2, random_state=42)
-                
-                # Select algorithm based on user choice
-                if algorithm == 'random_forest':
-                    model = RandomForestClassifier(n_estimators=100, random_state=42)
-                elif algorithm == 'logistic_regression':
-                    from sklearn.linear_model import LogisticRegression
-                    model = LogisticRegression(random_state=42, max_iter=1000)
-                elif algorithm == 'svm':
-                    from sklearn.svm import SVC
-                    model = SVC(probability=True, random_state=42)
-                elif algorithm == 'gradient_boosting':
-                    from sklearn.ensemble import GradientBoostingClassifier
-                    model = GradientBoostingClassifier(random_state=42)
-                elif algorithm == 'knn':
-                    from sklearn.neighbors import KNeighborsClassifier
-                    model = KNeighborsClassifier(n_neighbors=5)
-                else:
-                    # Default to Random Forest
-                    model = RandomForestClassifier(n_estimators=100, random_state=42)
-                
-                model.fit(X_train, y_train)
-                
-                # Make predictions and calculate metrics
-                predictions = model.predict(X_test)
-                accuracy = accuracy_score(y_test, predictions)
-                cm = confusion_matrix(y_test, predictions)
-                
-                # Generate confusion matrix plot
-                plt.figure(figsize=(8, 6))
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                            xticklabels=['No Diabetes', 'Diabetes'],
-                            yticklabels=['No Diabetes', 'Diabetes'])
-                plt.xlabel('Predicted')
-                plt.ylabel('Actual')
-                plt.title('Confusion Matrix')
-                
-                # Save plot to a bytes buffer
-                buf = io.BytesIO()
-                plt.savefig(buf, format='png', bbox_inches='tight')
-                buf.seek(0)
-                cm_image = base64.b64encode(buf.getvalue()).decode('utf-8')
-                buf.close()
-                plt.close()
-                
-                # Feature importance plot - only for models that support it
-                fi_image = None
-                feature_importance_df = None
-                
-                if hasattr(model, 'feature_importances_'):
-                    feature_importance = model.feature_importances_
-                    feature_importance_df = pd.DataFrame({
-                        'Feature': X.columns,
-                        'Importance': feature_importance
-                    }).sort_values(by='Importance', ascending=False)
-                    
-                    plt.figure(figsize=(10, 6))
-                    sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
-                    plt.title('Feature Importance')
-                    
-                    # Save plot to a bytes buffer
-                    buf = io.BytesIO()
-                    plt.savefig(buf, format='png', bbox_inches='tight')
-                    buf.seek(0)
-                    fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
-                    buf.close()
-                    plt.close()
-                elif algorithm == 'logistic_regression':
-                    # For logistic regression, use coefficients as feature importance
-                    coef = model.coef_[0]
-                    feature_importance_df = pd.DataFrame({
-                        'Feature': X.columns,
-                        'Importance': np.abs(coef)
-                    }).sort_values(by='Importance', ascending=False)
-                    
-                    plt.figure(figsize=(10, 6))
-                    sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
-                    plt.title('Feature Importance (Coefficient Magnitude)')
-                    
-                    # Save plot to a bytes buffer
-                    buf = io.BytesIO()
-                    plt.savefig(buf, format='png', bbox_inches='tight')
-                    buf.seek(0)
-                    fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
-                    buf.close()
-                    plt.close()
-                
-                # Save model to file
-                model_filename = f"model_{session['user_id']}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.joblib"
-                joblib.dump(model, model_filename)
-                
-                # Store model info in database
-                result = auth.save_model_data(
-                    session['user_id'],
-                    filename,
-                    model_filename,
-                    float(accuracy),
-                    cm.tolist(),
-                    list(X.columns),
-                    algorithm
-                )
-                model_id = result['inserted_id']
-                
-                # Store model in session for prediction
-                session['model'] = {
-                    'id': str(model_id),
-                    'filename': model_filename,
-                    'feature_names': list(X.columns)
-                }
-                
-                flash(f'Model trained successfully with accuracy: {accuracy:.2f}', 'success')
-                
-                # Prepare template context
-                context = {
-                    'accuracy': accuracy,
-                    'cm_image': cm_image,
-                    'fi_image': fi_image,
-                    'algorithm': algorithm,
-                    'feature_importance': feature_importance_df.to_dict('records') if feature_importance_df is not None else None
-                }
-                
-                return render_template('model_analysis.html', **context)
-            
-            except Exception as e:
-                flash(f'Error processing file: {str(e)}', 'danger')
-                logging.error(f"Error processing file: {str(e)}")
+    try:
+        if request.method == 'POST':
+            # Check if file is in the request
+            if 'file' not in request.files:
+                flash('No file selected.', 'danger')
                 return redirect(request.url)
-        else:
-            flash('File type not allowed. Please upload a CSV file.', 'danger')
-            return redirect(request.url)
+            
+            file = request.files['file']
+            
+            # If user doesn't select a file
+            if file.filename == '':
+                flash('No file selected.', 'danger')
+                return redirect(request.url)
+            
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                
+                try:
+                    # Read and process the CSV
+                    df = pd.read_csv(file)
+                    
+                    # Basic validation
+                    required_columns = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age', 'Outcome']
+                    missing_columns = [col for col in required_columns if col not in df.columns]
+                    
+                    if missing_columns:
+                        flash(f'Missing required columns: {", ".join(missing_columns)}', 'danger')
+                        return redirect(request.url)
+                    
+                    # Train the model
+                    X = df.drop('Outcome', axis=1)
+                    y = df['Outcome']
+                    
+                    # Get selected algorithm
+                    algorithm = request.form.get('algorithm', 'random_forest')
+                    
+                    # Data preprocessing
+                    # Handle missing values
+                    X = X.fillna(X.mean())
+                    
+                    # Feature scaling
+                    from sklearn.preprocessing import StandardScaler
+                    scaler = StandardScaler()
+                    X_scaled = scaler.fit_transform(X)
+                    X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns)
+                    
+                    X_train, X_test, y_train, y_test = train_test_split(X_scaled_df, y, test_size=0.2, random_state=42)
+                    
+                    # Select algorithm based on user choice
+                    if algorithm == 'random_forest':
+                        model = RandomForestClassifier(n_estimators=100, random_state=42)
+                    elif algorithm == 'logistic_regression':
+                        from sklearn.linear_model import LogisticRegression
+                        model = LogisticRegression(random_state=42, max_iter=1000)
+                    elif algorithm == 'svm':
+                        from sklearn.svm import SVC
+                        model = SVC(probability=True, random_state=42)
+                    elif algorithm == 'gradient_boosting':
+                        from sklearn.ensemble import GradientBoostingClassifier
+                        model = GradientBoostingClassifier(random_state=42)
+                    elif algorithm == 'knn':
+                        from sklearn.neighbors import KNeighborsClassifier
+                        model = KNeighborsClassifier(n_neighbors=5)
+                    else:
+                        # Default to Random Forest
+                        model = RandomForestClassifier(n_estimators=100, random_state=42)
+                    
+                    model.fit(X_train, y_train)
+                    
+                    # Make predictions and calculate metrics
+                    predictions = model.predict(X_test)
+                    accuracy = accuracy_score(y_test, predictions)
+                    cm = confusion_matrix(y_test, predictions)
+                    
+                    # Generate confusion matrix plot
+                    plt.figure(figsize=(8, 6))
+                    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                                xticklabels=['No Diabetes', 'Diabetes'],
+                                yticklabels=['No Diabetes', 'Diabetes'])
+                    plt.xlabel('Predicted')
+                    plt.ylabel('Actual')
+                    plt.title('Confusion Matrix')
+                    
+                    # Save plot to a bytes buffer
+                    buf = io.BytesIO()
+                    plt.savefig(buf, format='png', bbox_inches='tight')
+                    buf.seek(0)
+                    cm_image = base64.b64encode(buf.getvalue()).decode('utf-8')
+                    buf.close()
+                    plt.close()
+                    
+                    # Feature importance plot - only for models that support it
+                    fi_image = None
+                    feature_importance_df = None
+                    
+                    if hasattr(model, 'feature_importances_'):
+                        feature_importance = model.feature_importances_
+                        feature_importance_df = pd.DataFrame({
+                            'Feature': X.columns,
+                            'Importance': feature_importance
+                        }).sort_values(by='Importance', ascending=False)
+                        
+                        plt.figure(figsize=(10, 6))
+                        sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
+                        plt.title('Feature Importance')
+                        
+                        # Save plot to a bytes buffer
+                        buf = io.BytesIO()
+                        plt.savefig(buf, format='png', bbox_inches='tight')
+                        buf.seek(0)
+                        fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
+                        buf.close()
+                        plt.close()
+                    elif algorithm == 'logistic_regression':
+                        # For logistic regression, use coefficients as feature importance
+                        coef = model.coef_[0]
+                        feature_importance_df = pd.DataFrame({
+                            'Feature': X.columns,
+                            'Importance': np.abs(coef)
+                        }).sort_values(by='Importance', ascending=False)
+                        
+                        plt.figure(figsize=(10, 6))
+                        sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
+                        plt.title('Feature Importance (Coefficient Magnitude)')
+                        
+                        # Save plot to a bytes buffer
+                        buf = io.BytesIO()
+                        plt.savefig(buf, format='png', bbox_inches='tight')
+                        buf.seek(0)
+                        fi_image = base64.b64encode(buf.getvalue()).decode('utf-8')
+                        buf.close()
+                        plt.close()
+                    
+                    # Save model to file
+                    model_filename = f"model_{session['user_id']}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.joblib"
+                    joblib.dump(model, model_filename)
+                    
+                    # Store model info in database
+                    try:
+                        result = auth.save_model_data(
+                            session['user_id'],
+                            filename,
+                            model_filename,
+                            float(accuracy),
+                            cm.tolist(),
+                            list(X.columns),
+                            algorithm
+                        )
+                        
+                        if result and 'inserted_id' in result:
+                            model_id = result['inserted_id']
+                            
+                            # Store model in session for prediction
+                            session['model'] = {
+                                'id': str(model_id),
+                                'filename': model_filename,
+                                'feature_names': list(X.columns)
+                            }
+                        else:
+                            # If saving to database failed, still keep the model in session
+                            logging.warning("Model was trained but not saved to database")
+                            # Generate a random ID for the session
+                            import uuid
+                            session['model'] = {
+                                'id': str(uuid.uuid4()),
+                                'filename': model_filename,
+                                'feature_names': list(X.columns)
+                            }
+                            
+                    except Exception as db_error:
+                        logging.error(f"Error saving model to database: {str(db_error)}")
+                        # Generate a random ID for the session
+                        import uuid
+                        session['model'] = {
+                            'id': str(uuid.uuid4()),
+                            'filename': model_filename,
+                            'feature_names': list(X.columns)
+                        }
+                    
+                    flash(f'Model trained successfully with accuracy: {accuracy:.2f}', 'success')
+                    
+                    # Prepare template context
+                    context = {
+                        'accuracy': accuracy,
+                        'cm_image': cm_image,
+                        'fi_image': fi_image,
+                        'algorithm': algorithm,
+                        'feature_importance': feature_importance_df.to_dict('records') if feature_importance_df is not None else None
+                    }
+                    
+                    return render_template('model_analysis.html', **context)
+                
+                except Exception as e:
+                    flash(f'Error processing file: {str(e)}', 'danger')
+                    logging.error(f"Error processing file: {str(e)}")
+                    return render_template('model_analysis.html')
+            else:
+                flash('File type not allowed. Please upload a CSV file.', 'danger')
+                return redirect(request.url)
+        
+        return render_template('model_analysis.html')
     
-    return render_template('model_analysis.html')
+    except Exception as e:
+        flash(f'An unexpected error occurred: {str(e)}', 'danger')
+        logging.error(f"Unexpected error in model_analysis route: {str(e)}")
+        return render_template('model_analysis.html')
 
 @app.route('/prediction', methods=['GET', 'POST'])
 def prediction():
@@ -309,100 +348,148 @@ def prediction():
     
     form = PredictionForm()
     
-    # Get the latest model if none is in session
-    if 'model' not in session:
-        # Get the user's models and take the first one (most recent)
-        user_models = auth.get_models_by_user(session['user_id'])
-        latest_model = user_models[0] if user_models else None
+    try:
+        # Get the latest model if none is in session
+        if 'model' not in session:
+            try:
+                # Get the user's models and take the first one (most recent)
+                user_models = auth.get_models_by_user(session['user_id'])
+                
+                if user_models and len(user_models) > 0:
+                    latest_model = user_models[0]
+                    session['model'] = {
+                        'id': str(latest_model['_id']),
+                        'filename': latest_model['model_filename'],
+                        'feature_names': latest_model['feature_names']
+                    }
+                else:
+                    flash('Please train a model first.', 'warning')
+                    return redirect(url_for('model_analysis'))
+            except Exception as e:
+                flash(f'Error loading models: {str(e)}', 'danger')
+                logging.error(f"Error loading models: {str(e)}")
+                return render_template('prediction.html', form=form)
         
-        if latest_model:
-            session['model'] = {
-                'id': str(latest_model['_id']),
-                'filename': latest_model['model_filename'],
-                'feature_names': latest_model['feature_names']
-            }
-        else:
-            flash('Please train a model first.', 'warning')
-            return redirect(url_for('model_analysis'))
-    
-    if form.validate_on_submit():
-        try:
-            # Load the model
-            model = joblib.load(session['model']['filename'])
+        if form.validate_on_submit():
+            try:
+                # Check if model file exists
+                if not os.path.exists(session['model']['filename']):
+                    flash('Model file not found. Please train a new model.', 'danger')
+                    return render_template('prediction.html', form=form)
+                
+                # Load the model
+                model = joblib.load(session['model']['filename'])
+                
+                # Prepare input data
+                input_data = {
+                    'Pregnancies': form.pregnancies.data,
+                    'Glucose': form.glucose.data,
+                    'BloodPressure': form.blood_pressure.data,
+                    'SkinThickness': form.skin_thickness.data,
+                    'Insulin': form.insulin.data,
+                    'BMI': form.bmi.data,
+                    'DiabetesPedigreeFunction': form.diabetes_pedigree_function.data,
+                    'Age': form.age.data
+                }
+                
+                # Convert to DataFrame
+                input_df = pd.DataFrame([input_data])
+                
+                # Make prediction
+                prediction = model.predict(input_df)[0]
+                prediction_proba = model.predict_proba(input_df)[0][1]  # Probability of being diabetic
+                
+                # Save prediction to database
+                save_result = auth.save_prediction(
+                    session['user_id'],
+                    session['model']['id'],
+                    input_data,
+                    int(prediction),
+                    float(prediction_proba)
+                )
+                
+                if not save_result:
+                    logging.warning("Prediction was made but not saved to database")
+                
+                result = {
+                    'prediction': 'Diabetic' if prediction == 1 else 'Non-Diabetic',
+                    'probability': f"{prediction_proba * 100:.2f}%"
+                }
+                
+                return render_template('prediction.html', form=form, result=result)
             
-            # Prepare input data
-            input_data = {
-                'Pregnancies': form.pregnancies.data,
-                'Glucose': form.glucose.data,
-                'BloodPressure': form.blood_pressure.data,
-                'SkinThickness': form.skin_thickness.data,
-                'Insulin': form.insulin.data,
-                'BMI': form.bmi.data,
-                'DiabetesPedigreeFunction': form.diabetes_pedigree_function.data,
-                'Age': form.age.data
-            }
-            
-            # Convert to DataFrame
-            input_df = pd.DataFrame([input_data])
-            
-            # Make prediction
-            prediction = model.predict(input_df)[0]
-            prediction_proba = model.predict_proba(input_df)[0][1]  # Probability of being diabetic
-            
-            # Save prediction to database
-            auth.save_prediction(
-                session['user_id'],
-                session['model']['id'],
-                input_data,
-                int(prediction),
-                float(prediction_proba)
-            )
-            
-            result = {
-                'prediction': 'Diabetic' if prediction == 1 else 'Non-Diabetic',
-                'probability': f"{prediction_proba * 100:.2f}%"
-            }
-            
-            return render_template('prediction.html', form=form, result=result)
+            except Exception as e:
+                flash(f'Error making prediction: {str(e)}', 'danger')
+                logging.error(f"Error making prediction: {str(e)}")
+                return render_template('prediction.html', form=form)
         
-        except Exception as e:
-            flash(f'Error making prediction: {str(e)}', 'danger')
-            logging.error(f"Error making prediction: {str(e)}")
+        return render_template('prediction.html', form=form)
     
-    return render_template('prediction.html', form=form)
+    except Exception as e:
+        flash(f'An unexpected error occurred: {str(e)}', 'danger')
+        logging.error(f"Unexpected error in prediction route: {str(e)}")
+        return render_template('prediction.html', form=form)
 
 @app.route('/api/models')
 def api_models():
     if 'user_id' not in session:
         return json.dumps({'error': 'Unauthorized'}), 401
     
-    user_models = auth.get_models_by_user(session['user_id'])
-    for model in user_models:
-        model['_id'] = str(model['_id'])
-        if isinstance(model['created_at'], str):
-            # If already a string, keep as is
-            pass
-        else:
-            model['created_at'] = model['created_at'].isoformat()
-    
-    return json.dumps(user_models)
+    try:
+        user_models = auth.get_models_by_user(session['user_id'])
+        if not user_models:
+            return json.dumps([])
+            
+        for model in user_models:
+            # Convert ObjectId to string
+            model['_id'] = str(model['_id'])
+            
+            # Handle created_at timestamp
+            try:
+                if isinstance(model['created_at'], str):
+                    # If already a string, keep as is
+                    pass
+                else:
+                    model['created_at'] = model['created_at'].isoformat()
+            except Exception as e:
+                logging.error(f"Error formatting model date: {str(e)}")
+                model['created_at'] = str(model['created_at'])
+        
+        return json.dumps(user_models)
+    except Exception as e:
+        logging.error(f"Error in api_models: {str(e)}")
+        return json.dumps({'error': str(e)}), 500
 
 @app.route('/api/predictions')
 def api_predictions():
     if 'user_id' not in session:
         return json.dumps({'error': 'Unauthorized'}), 401
     
-    user_predictions = auth.get_predictions_by_user(session['user_id'])
-    for pred in user_predictions:
-        pred['_id'] = str(pred['_id'])
-        pred['model_id'] = str(pred['model_id'])
-        if isinstance(pred['created_at'], str):
-            # If already a string, keep as is
-            pass
-        else:
-            pred['created_at'] = pred['created_at'].isoformat()
-    
-    return json.dumps(user_predictions)
+    try:
+        user_predictions = auth.get_predictions_by_user(session['user_id'])
+        if not user_predictions:
+            return json.dumps([])
+            
+        for pred in user_predictions:
+            # Convert ObjectId to string
+            pred['_id'] = str(pred['_id'])
+            pred['model_id'] = str(pred['model_id'])
+            
+            # Handle created_at timestamp
+            try:
+                if isinstance(pred['created_at'], str):
+                    # If already a string, keep as is
+                    pass
+                else:
+                    pred['created_at'] = pred['created_at'].isoformat()
+            except Exception as e:
+                logging.error(f"Error formatting prediction date: {str(e)}")
+                pred['created_at'] = str(pred['created_at'])
+        
+        return json.dumps(user_predictions)
+    except Exception as e:
+        logging.error(f"Error in api_predictions: {str(e)}")
+        return json.dumps({'error': str(e)}), 500
 
 @app.route('/export_predictions/<format>')
 def export_predictions(format):
@@ -410,67 +497,98 @@ def export_predictions(format):
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    user_predictions = auth.get_predictions_by_user(session['user_id'])
-    
-    if not user_predictions:
-        flash('No predictions to export.', 'warning')
-        return redirect(url_for('dashboard'))
-    
-    # Create simplified predictions for export
-    export_data = []
-    for pred in user_predictions:
-        # Convert ObjectId to string
-        pred_id = str(pred['_id'])
-        model_id = str(pred['model_id'])
+    try:
+        user_predictions = auth.get_predictions_by_user(session['user_id'])
         
-        # Format the prediction data
-        export_item = {
-            'id': pred_id,
-            'model_id': model_id,
-            'pregnancies': pred['input_data']['Pregnancies'],
-            'glucose': pred['input_data']['Glucose'],
-            'blood_pressure': pred['input_data']['BloodPressure'],
-            'skin_thickness': pred['input_data']['SkinThickness'],
-            'insulin': pred['input_data']['Insulin'],
-            'bmi': pred['input_data']['BMI'],
-            'diabetes_pedigree_function': pred['input_data']['DiabetesPedigreeFunction'],
-            'age': pred['input_data']['Age'],
-            'prediction': 'Diabetic' if pred['prediction'] == 1 else 'Non-Diabetic',
-            'probability': f"{pred['prediction_probability'] * 100:.2f}%",
-            'date': pred['created_at'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(pred['created_at'], 'strftime') else pred['created_at']
-        }
-        export_data.append(export_item)
+        if not user_predictions:
+            flash('No predictions to export.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Create simplified predictions for export
+        export_data = []
+        for pred in user_predictions:
+            try:
+                # Convert ObjectId to string
+                pred_id = str(pred['_id'])
+                model_id = str(pred['model_id'])
+                
+                # Format date
+                if isinstance(pred['created_at'], str):
+                    date_str = pred['created_at']
+                else:
+                    date_str = pred['created_at'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(pred['created_at'], 'strftime') else str(pred['created_at'])
+                
+                # Format the prediction data
+                export_item = {
+                    'id': pred_id,
+                    'model_id': model_id,
+                    'pregnancies': pred['input_data']['Pregnancies'],
+                    'glucose': pred['input_data']['Glucose'],
+                    'blood_pressure': pred['input_data']['BloodPressure'],
+                    'skin_thickness': pred['input_data']['SkinThickness'],
+                    'insulin': pred['input_data']['Insulin'],
+                    'bmi': pred['input_data']['BMI'],
+                    'diabetes_pedigree_function': pred['input_data']['DiabetesPedigreeFunction'],
+                    'age': pred['input_data']['Age'],
+                    'prediction': 'Diabetic' if pred['prediction'] == 1 else 'Non-Diabetic',
+                    'probability': f"{pred['prediction_probability'] * 100:.2f}%",
+                    'date': date_str
+                }
+                export_data.append(export_item)
+            except Exception as e:
+                logging.error(f"Error formatting prediction for export: {str(e)}")
+                # Skip this prediction and continue with others
+                continue
+        
+        if not export_data:
+            flash('Error formatting predictions for export.', 'danger')
+            return redirect(url_for('dashboard'))
+        
+        if format == 'csv':
+            try:
+                # Convert to CSV
+                output = io.StringIO()
+                writer = csv.writer(output)
+                
+                # Write header
+                writer.writerow(export_data[0].keys())
+                
+                # Write data
+                for item in export_data:
+                    writer.writerow(item.values())
+                
+                output.seek(0)
+                
+                return Response(
+                    output.getvalue(),
+                    mimetype="text/csv",
+                    headers={"Content-disposition": f"attachment; filename=predictions_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"}
+                )
+            except Exception as e:
+                flash(f'Error exporting to CSV: {str(e)}', 'danger')
+                logging.error(f"Error exporting to CSV: {str(e)}")
+                return redirect(url_for('dashboard'))
+        
+        elif format == 'json':
+            try:
+                # Return as JSON file
+                return Response(
+                    json.dumps(export_data, indent=4),
+                    mimetype="application/json",
+                    headers={"Content-disposition": f"attachment; filename=predictions_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.json"}
+                )
+            except Exception as e:
+                flash(f'Error exporting to JSON: {str(e)}', 'danger')
+                logging.error(f"Error exporting to JSON: {str(e)}")
+                return redirect(url_for('dashboard'))
+        
+        else:
+            flash('Invalid export format.', 'danger')
+            return redirect(url_for('dashboard'))
     
-    if format == 'csv':
-        # Convert to CSV
-        output = io.StringIO()
-        writer = csv.writer(output)
-        
-        # Write header
-        writer.writerow(export_data[0].keys())
-        
-        # Write data
-        for item in export_data:
-            writer.writerow(item.values())
-        
-        output.seek(0)
-        
-        return Response(
-            output.getvalue(),
-            mimetype="text/csv",
-            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"}
-        )
-    
-    elif format == 'json':
-        # Return as JSON file
-        return Response(
-            json.dumps(export_data, indent=4),
-            mimetype="application/json",
-            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.json"}
-        )
-    
-    else:
-        flash('Invalid export format.', 'danger')
+    except Exception as e:
+        flash(f'An error occurred while exporting predictions: {str(e)}', 'danger')
+        logging.error(f"Error in export_predictions: {str(e)}")
         return redirect(url_for('dashboard'))
 
 @app.context_processor

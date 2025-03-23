@@ -25,7 +25,14 @@ from forms import LoginForm, SignupForm, PredictionForm
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
+# Ensure a strong secret key for sessions
+if os.environ.get("SESSION_SECRET"):
+    app.secret_key = os.environ.get("SESSION_SECRET")
+else:
+    # Generate a random secret key if not set
+    import secrets
+    app.secret_key = secrets.token_hex(16)
+    logging.warning("Using randomly generated secret key. Set SESSION_SECRET environment variable for production.")
 
 # Check if MongoDB is configured
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
@@ -86,25 +93,39 @@ def signup():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # If user is already logged in, redirect to dashboard
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+        
     form = LoginForm()
     if form.validate_on_submit():
-        user = auth.get_user_by_username(form.username.data)
-        
-        if user and check_password_hash(user['password'], form.password.data):
-            session['user_id'] = str(user['_id'])
-            session['username'] = user['username']
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username or password.', 'danger')
+        try:
+            user = auth.get_user_by_username(form.username.data)
+            
+            if user and check_password_hash(user['password'], form.password.data):
+                # Clear any existing session data
+                session.clear()
+                # Set new session data
+                session['user_id'] = str(user['_id'])
+                session['username'] = user['username']
+                session.modified = True
+                
+                flash('Logged in successfully!', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Invalid username or password.', 'danger')
+        except Exception as e:
+            logging.error(f"Login error: {str(e)}")
+            flash('An error occurred during login. Please try again.', 'danger')
     
     return render_template('login.html', form=form)
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    session.pop('username', None)
-    session.pop('model', None)
+    # Clear the entire session
+    session.clear()
+    session.modified = True
+    
     flash('You have been logged out.', 'success')
     return redirect(url_for('home'))
 
@@ -594,10 +615,13 @@ def export_predictions(format):
 @app.context_processor
 def utility_processor():
     def is_user_logged_in():
-        return 'user_id' in session
+        logged_in = 'user_id' in session and session.get('user_id') != None
+        return logged_in
     
     def get_username():
-        return session.get('username', '')
+        if 'username' in session:
+            return session.get('username', '')
+        return 'User'
     
     return {
         'is_user_logged_in': is_user_logged_in,

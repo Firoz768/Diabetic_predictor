@@ -34,5 +34,59 @@
         "prediction": 1,
         "prediction_probability": 0.55,
         "created_at": "2025-03-23T04:08:12.869267"
+    },
+    {
+        "_id": "144bf6ec-b4c5-4000-b153-13ecfad5a478",
+        "user_id": "286f04fa-aafd-4141-a390-63da9aacbf61",
+        "model_id": "448306f9-210d-48b6-81f4-e8677a71cd5e",
+        "input_data": {
+            "Pregnancies": 1,
+            "Glucose": 180.0,
+            "BloodPressure": 80.0,
+            "SkinThickness": 10.0,
+            "Insulin": 100.0,
+            "BMI": 70.0,
+            "DiabetesPedigreeFunction": 1.0,
+            "Age": 21
+        },
+        "prediction": 1,
+        "prediction_probability": 0.55,
+        "created_at": "2025-03-23T09:48:38.612407"
+    },
+    {
+        "_id": "9d03739e-945a-4ef2-a37c-d52d0d4114b0",
+        "user_id": "286f04fa-aafd-4141-a390-63da9aacbf61",
+        "model_id": "448306f9-210d-48b6-81f4-e8677a71cd5e",
+        "input_data": {
+            "Pregnancies": 1,
+            "Glucose": 180.0,
+            "BloodPressure": 80.0,
+            "SkinThickness": 10.0,
+            "Insulin": 100.0,
+            "BMI": 70.0,
+            "DiabetesPedigreeFunction": 1.0,
+            "Age": 21
+        },
+        "prediction": 1,
+        "prediction_probability": 0.55,
+        "created_at": "2025-03-23T09:48:45.502477"
+    },
+    {
+        "_id": "b0f113e3-4b20-4d96-bf9d-3edba9f981a2",
+        "user_id": "8568fee5-e680-4b42-844f-a2ba09c2826f",
+        "model_id": "c98a2930-9fb4-454f-aa47-caf616cc1322",
+        "input_data": {
+            "Pregnancies": 1,
+            "Glucose": 80.0,
+            "BloodPressure": 100.0,
+            "SkinThickness": 10.0,
+            "Insulin": 100.0,
+            "BMI": 26.0,
+            "DiabetesPedigreeFunction": 1.0,
+            "Age": 25
+        },
+        "prediction": 1,
+        "prediction_probability": 0.55,
+        "created_at": "2025-03-23T10:16:30.200872"
     }
 ]

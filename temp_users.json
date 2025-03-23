@@ -1,0 +1,8 @@
+{
+    "spidey_firoz": {
+        "_id": "34f7e11f-ee11-4989-b453-53324f496fe5",
+        "username": "spidey_firoz",
+        "password": "scrypt:32768:8:1$8SPWDKrxlP6ZdlTS$0a1058e37cfd38519fb70920b5159fa86fb2a22c7922694ae25b11891d8e2077e0c86194fc925853d5db910eba4e96f0a61cfbbc8dbb8fa637d5c8783e2e6aa1",
+        "created_at": "2025-03-23T03:53:50.886951"
+    }
+}

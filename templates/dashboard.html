@@ -84,7 +84,7 @@
                             <tbody>
                                 {% for model in models[:5] %}
                                     <tr>
-                                        <td>{{ model.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{% if model.created_at is string %}{{ model.created_at }}{% else %}{{ model.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</td>
                                         <td>{{ model.filename }}</td>
                                         <td>{{ "%.2f"|format(model.accuracy * 100) }}%</td>
                                     </tr>
@@ -121,7 +121,7 @@
                             <tbody>
                                 {% for prediction in predictions[:5] %}
                                     <tr>
-                                        <td>{{ prediction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        <td>{% if prediction.created_at is string %}{{ prediction.created_at }}{% else %}{{ prediction.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</td>
                                         <td>
                                             {% if prediction.prediction == 1 %}
                                                 <span class="badge bg-danger">Diabetic</span>

@@ -28,18 +28,26 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 # Check if MongoDB is configured
-MONGO_URI = os.environ.get("MONGO_URI")
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 db_initialized = False
 
 # Initialize MongoDB if connection string exists
-if MONGO_URI:
-    try:
-        db = models.initialize_db(MONGO_URI)
-        db_initialized = True
-        logging.info("MongoDB initialized successfully")
-    except Exception as e:
-        logging.error(f"Error initializing MongoDB: {str(e)}")
-        db_initialized = False
+try:
+    db = models.initialize_db(MONGO_URI)
+    db_initialized = True
+    logging.info("MongoDB initialized successfully")
+    
+    # Set authentication module based on database connection
+    auth = models
+    logging.info("Using MongoDB for authentication and data storage")
+except Exception as e:
+    logging.error(f"Error initializing MongoDB: {str(e)}")
+    logging.info("Using temporary file-based authentication as fallback")
+    db_initialized = False
+    
+    # Use temp_auth for authentication as fallback
+    auth = temp_auth
+    logging.info("Using file-based authentication as fallback")
 
 # Configure file upload
 ALLOWED_EXTENSIONS = {'csv'}

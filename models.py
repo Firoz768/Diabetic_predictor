@@ -36,7 +36,7 @@ def initialize_db(mongo_uri):
     
     try:
         client = MongoClient(mongo_uri)
-        db = client.get_database()
+        db = client.diabetes_predictor  # Explicitly set database name
         
         # Set up collections
         users_collection = db.users
@@ -85,7 +85,7 @@ def get_user_by_id(user_id):
         return None
 
 # Model functions
-def save_model_data(user_id, filename, model_filename, accuracy, confusion_matrix, feature_names):
+def save_model_data(user_id, filename, model_filename, accuracy, confusion_matrix, feature_names, algorithm=None):
     """Save model data to the database"""
     if models_collection is None:
         logging.error("Cannot save model data: MongoDB not connected")
@@ -98,6 +98,7 @@ def save_model_data(user_id, filename, model_filename, accuracy, confusion_matri
         'accuracy': accuracy,
         'confusion_matrix': confusion_matrix,
         'feature_names': feature_names,
+        'algorithm': algorithm,
         'created_at': datetime.now()
     }
     return models_collection.insert_one(model_data)

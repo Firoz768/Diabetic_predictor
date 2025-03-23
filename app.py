@@ -1,6 +1,7 @@
 import os
 import logging
 import csv
+import datetime
 from flask import Flask, render_template, redirect, url_for, flash, request, session, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -15,7 +16,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import io
 import base64
-from datetime import datetime
 import joblib
 import json
 import temp_auth
@@ -256,7 +256,7 @@ def model_analysis():
                     plt.close()
                 
                 # Save model to file
-                model_filename = f"model_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}.joblib"
+                model_filename = f"model_{session['user_id']}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.joblib"
                 joblib.dump(model, model_filename)
                 
                 # Store model info in database
@@ -392,7 +392,7 @@ def api_predictions():
     if 'user_id' not in session:
         return json.dumps({'error': 'Unauthorized'}), 401
     
-    user_predictions = temp_auth.get_predictions_by_user(session['user_id'])
+    user_predictions = auth.get_predictions_by_user(session['user_id'])
     for pred in user_predictions:
         pred['_id'] = str(pred['_id'])
         pred['model_id'] = str(pred['model_id'])
@@ -410,7 +410,7 @@ def export_predictions(format):
         flash('Please log in to access this page.', 'warning')
         return redirect(url_for('login'))
     
-    user_predictions = temp_auth.get_predictions_by_user(session['user_id'])
+    user_predictions = auth.get_predictions_by_user(session['user_id'])
     
     if not user_predictions:
         flash('No predictions to export.', 'warning')
@@ -458,7 +458,7 @@ def export_predictions(format):
         return Response(
             output.getvalue(),
             mimetype="text/csv",
-            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.now().strftime('%Y%m%d%H%M%S')}.csv"}
+            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.csv"}
         )
     
     elif format == 'json':
@@ -466,7 +466,7 @@ def export_predictions(format):
         return Response(
             json.dumps(export_data, indent=4),
             mimetype="application/json",
-            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"}
+            headers={"Content-disposition": f"attachment; filename=predictions_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.json"}
         )
     
     else:
